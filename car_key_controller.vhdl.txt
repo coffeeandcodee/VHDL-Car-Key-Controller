@@ -1,0 +1,85 @@
+LIBRARY ieee ;
+USE ieee.std_logic_1164.all ;
+
+ENTITY car_key_controller IS
+PORT ( clk,reset,Light,Trunk,TL,TR,BL,BR : IN STD_LOGIC ;
+DL,DUL,TRL,TRUL,TRUP,TRDWN,LON,LOFF: OUT STD_LOGIC ) ;
+END car_key_controller;
+
+ARCHITECTURE Behavior OF car_key_controller IS
+TYPE State_type IS (initial, DoorLock, DoorUnlock, LightON, LightOFF, check, TrunkLock, TrunkUnlock, TrunkUnlockUp, TrunkDownLock) ;
+SIGNAL y_present, y_next : State_type ;
+signal Lock,Sec5 : std_logic;
+component counter5Sec
+port (clk : in std_logic;
+reset : in std_logic;
+Sec5 : out std_logic);
+end component;
+BEGIN
+uut : counter5Sec port map(clk => clk,reset => BR, Sec5 => Sec5);
+PROCESS ( Light,Trunk,TL,TR,BL,BR, Lock,Sec5, y_present )
+BEGIN
+CASE y_present IS
+WHEN initial =>
+if TL = '1' then
+y_next <= DoorLock;
+elsif TR = '1' then
+y_next <= DoorUnlock;
+elsif BL = '1' and Light = '0' then
+y_next <= LightON;
+elsif BL = '1' and Light = '1' then
+y_next <= LightOFF;
+elsif BR = '1' then
+y_next <= check;
+end if;
+WHEN DoorLock =>
+y_next <= initial;
+WHEN DoorUnlock =>
+y_next <= initial;
+WHEN LightON =>
+y_next <= initial;
+WHEN LightOFF =>
+y_next <= initial;
+WHEN check =>
+if BR = '0' and Sec5 = '0' and Trunk = '1' and Lock = '0' then
+y_next <= TrunkLock;
+elsif BR = '0' and Sec5 = '0' and Trunk = '1' and Lock = '1' then
+y_next <= TrunkUnlock;
+elsif Sec5 = '1' and Trunk = '1' then
+y_next <= TrunkUnlockUp;
+elsif Sec5 = '1' and Trunk = '0' then
+y_next <= TrunkDownLock;
+elsif BR = '0' and Sec5 = '0' and Trunk = '0' then
+y_next <= initial;
+end if;
+WHEN TrunkLock =>
+y_next <= initial;
+WHEN TrunkUnlock =>
+y_next <= initial;
+WHEN TrunkUnlockUp =>
+y_next <= initial;
+WHEN TrunkDownLock =>
+y_next <= initial;
+END CASE ;
+END PROCESS ;
+PROCESS (clk, reset)
+BEGIN
+IF reset = '1' THEN
+y_present <= initial ;
+ELSIF rising_edge(clk) THEN
+y_present <= y_next ;
+END IF ;
+END PROCESS ;
+DL <= '1' WHEN y_present = DoorLock ELSE '0' ;
+DUL <= '1' WHEN y_present = DoorUnlock ELSE '0' ;
+TRL <= '1' WHEN y_present = TrunkLock ELSE
+'1' WHEN y_present = TrunkDownLock ELSE '0' ;
+TRUL <= '1' WHEN y_present = TrunkUnlock ELSE
+'1' WHEN y_present = TrunkUnlockUp ELSE '0' ;
+TRUP <= '1' WHEN y_present = TrunkUnlockUp ELSE '0' ;
+TRDWN <= '1' WHEN y_present = TrunkDownLock ELSE '0' ;
+LON <= '1' WHEN y_present = LightON ELSE '0' ;
+LOFF <= '1' WHEN y_present = LightOFF ELSE '0' ;
+Lock <= '1' WHEN y_present = TrunkLock ELSE '0' ;
+
+END Behavior ;

@@ -1,0 +1,31 @@
+library IEEE;
+use IEEE.std_logic_1164.all;
+use IEEE.std_logic_arith.all;
+use IEEE.numeric_std.all;
+use IEEE.std_logic_unsigned.all;
+
+entity counter5Sec is
+port (clk : in std_logic;
+reset : in std_logic;
+Sec5 : out std_logic);
+end counter5Sec;
+
+architecture behavior of counter5Sec is
+signal q : std_logic_vector (2 downto 0);
+begin
+process(clk,reset)
+begin
+if reset='0' then
+q<="000";
+Sec5<='0';
+elsif rising_edge(clk) then
+if q<"101" then
+q <= q + "001";
+Sec5<='0';
+else
+q <= q;
+Sec5<='1';
+end if;
+end if;
+end process;
+end behavior;
